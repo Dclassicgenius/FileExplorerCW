@@ -18,81 +18,84 @@ import javax.swing.ListCellRenderer;
 
 //The model from the MVC(model-view-controller) architecture
 // AbstractListModel is a view model associated with a Jlist
-public class FileModel extends AbstractListModel{
+public class FileModel extends AbstractListModel {
     private List<File> data = null;
     private File root;
-    private Map<String,List<Color>> map;
-    public FileModel(String pathName,Map<String,List<Color>> map){
+    private Map<String, List<Color>> map;
+
+    public FileModel(String pathName, Map<String, List<Color>> map) {
         root = new File(pathName);
-        File [] temp = GetFiles();
-        if(temp == null){
+        File[] temp = GetFiles();
+        if (temp == null) {
             data = new ArrayList<File>();
-        }else{
+        } else {
             data = Arrays.asList(temp);
         }
         this.map = map;
     }
-    public FileModel(File file){
+
+    public FileModel(File file) {
         root = file;
-        File [] temp = GetFiles();
-        if(temp == null){
+        File[] temp = GetFiles();
+        if (temp == null) {
             data = new ArrayList<File>();
-        }else{
+        } else {
             data = Arrays.asList(temp);
         }
     }
+
     //A filter for showing only files
-    private File[] GetFiles(){
-        try{
-            return root.listFiles(new FilenameFilter(){
-                public boolean accept(File file, String name){
-                    return new File(file,name).isFile();
+    private File[] GetFiles() {
+        try {
+            return root.listFiles(new FilenameFilter() {
+                public boolean accept(File file, String name) {
+                    return new File(file, name).isFile();
                 }
             });
-        }
-        catch (Exception ex){
+        } catch (Exception ex) {
             return new File[0];
         }
     }
+
     //A filter that checks the files and see whether their markers are the same with the markers in the filter
-    public void SetFilter(List<Color> filters){
+    public void SetFilter(List<Color> filters) {
         List<File> temp = new ArrayList<File>();
-        File [] tempData = GetFiles();
-        if(tempData == null){
+        File[] tempData = GetFiles();
+        if (tempData == null) {
             data = new ArrayList<File>();
-        }else{
+        } else {
             data = Arrays.asList(tempData);
         }
 
-        if(filters.size()>0){
-            for(int i = 0;i<data.size();i++){
+        if (filters.size() > 0) {
+            for (int i = 0; i < data.size(); i++) {
                 String filePath = data.get(i).getPath();
-                if(map.containsKey(filePath)){
+                if (map.containsKey(filePath)) {
                     List<Color> colors = map.get(filePath);
-                    if(colors.containsAll(filters)){
+                    if (colors.containsAll(filters)) {
                         temp.add(data.get(i));
                     }
                 }
-            }                
+            }
             data = temp;
-        }        
-        fireContentsChanged(this,0,getSize()-1);
+        }
+        fireContentsChanged(this, 0, getSize() - 1);
     }
-    public void setDirectory( File dir ) {
-        if ( dir != null ) {
+
+    public void setDirectory(File dir) {
+        if (dir != null) {
             root = dir;
-            File [] temp = GetFiles();
-            if(temp == null){
+            File[] temp = GetFiles();
+            if (temp == null) {
                 data = new ArrayList<File>();
-            }else{
+            } else {
                 data = Arrays.asList(temp);
             }
-        }
-        else {
+        } else {
             root = null;
             data = new ArrayList<File>();
         }
-        fireContentsChanged(this,0,getSize()-1);
+        fireContentsChanged(this, 0, getSize() - 1);
     }
 
     @Override

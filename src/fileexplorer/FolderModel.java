@@ -14,9 +14,10 @@ import javax.swing.tree.TreePath;
 
 
 //implements the treemodel to work with files
-public class FolderModel implements TreeModel{
+public class FolderModel implements TreeModel {
     private File root;
-    public FolderModel(String path){
+
+    public FolderModel(String path) {
         root = new File(path);
     }
 
@@ -27,37 +28,36 @@ public class FolderModel implements TreeModel{
 
     @Override
     public Object getChild(Object parent, int index) {
-        File directory = (File)parent;
+        File directory = (File) parent;
         String[] children = GetFolders(directory);
-        return new File( directory, children[index] );
+        return new File(directory, children[index]);
     }
 
 
     @Override
-    public int getChildCount( Object parent ) {
-        File fileSysEntity = (File)parent;
-        if ( fileSysEntity.isDirectory() ) {
+    public int getChildCount(Object parent) {
+        File fileSysEntity = (File) parent;
+        if (fileSysEntity.isDirectory()) {
             String[] children = GetFolders(fileSysEntity);
-            return children == null? 0:children.length;
-        }
-        else {
+            return children == null ? 0 : children.length;
+        } else {
             return 0;
         }
     }
-    
-    public boolean isLeaf( Object node ) {
-        return ((File)node).isFile();
+
+    public boolean isLeaf(Object node) {
+        return ((File) node).isFile();
     }
-    
+
     @Override
-    public int getIndexOfChild( Object parent, Object child ) {
-        File directory = (File)parent;
-        File fileSysEntity = (File)child;
+    public int getIndexOfChild(Object parent, Object child) {
+        File directory = (File) parent;
+        File fileSysEntity = (File) child;
         String[] children = directory.list();
         int result = -1;
 
-        for ( int i = 0; i < children.length; ++i ) {
-            if ( fileSysEntity.getName().equals( children[i] ) ) {
+        for (int i = 0; i < children.length; ++i) {
+            if (fileSysEntity.getName().equals(children[i])) {
                 result = i;
                 break;
             }
@@ -65,7 +65,7 @@ public class FolderModel implements TreeModel{
 
         return result;
     }
-    
+
     @Override
     public void valueForPathChanged(TreePath path, Object newValue) {
     }
@@ -77,10 +77,11 @@ public class FolderModel implements TreeModel{
     @Override
     public void removeTreeModelListener(TreeModelListener l) {
     }
-    private String[] GetFolders(File file){
-        return file.list(new FilenameFilter(){
-            public boolean accept(File file, String name){
-                return new File(file,name).isDirectory();
+
+    private String[] GetFolders(File file) {
+        return file.list(new FilenameFilter() {
+            public boolean accept(File file, String name) {
+                return new File(file, name).isDirectory();
             }
         });
     }
