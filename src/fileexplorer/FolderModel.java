@@ -1,21 +1,14 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package fileexplorer;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import javax.swing.JTree;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
-
+import java.io.File;
 
 //implements the treemodel to work with files
 public class FolderModel implements TreeModel {
-    private File root;
+    private final File root;
 
     public FolderModel(String path) {
         root = new File(path);
@@ -55,14 +48,14 @@ public class FolderModel implements TreeModel {
         File fileSysEntity = (File) child;
         String[] children = directory.list();
         int result = -1;
-
-        for (int i = 0; i < children.length; ++i) {
-            if (fileSysEntity.getName().equals(children[i])) {
-                result = i;
-                break;
+        if (children != null) {
+            for (int i = 0; i < children.length; ++i) {
+                if (fileSysEntity.getName().equals(children[i])) {
+                    result = i;
+                    break;
+                }
             }
         }
-
         return result;
     }
 
@@ -79,10 +72,6 @@ public class FolderModel implements TreeModel {
     }
 
     private String[] GetFolders(File file) {
-        return file.list(new FilenameFilter() {
-            public boolean accept(File file, String name) {
-                return new File(file, name).isDirectory();
-            }
-        });
+        return file.list((file1, name) -> new File(file1, name).isDirectory());
     }
 }

@@ -1,22 +1,12 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package fileexplorer;
 
-import java.awt.Component;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.JCheckBox;
-import javax.swing.JList;
-import javax.swing.ListCellRenderer;
-import javax.swing.ListModel;
-import javax.swing.ListSelectionModel;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class CheckboxListRenderer extends JList<JCheckBox> {
     protected static Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
@@ -27,7 +17,7 @@ public class CheckboxListRenderer extends JList<JCheckBox> {
             public void mousePressed(MouseEvent e) {
                 int index = locationToIndex(e.getPoint());
                 if (index != -1) {
-                    JCheckBox checkbox = (JCheckBox) getModel().getElementAt(index);
+                    JCheckBox checkbox = getModel().getElementAt(index);
                     checkbox.setSelected(!checkbox.isSelected());
                     repaint();
                 }
@@ -43,9 +33,8 @@ public class CheckboxListRenderer extends JList<JCheckBox> {
 
     protected class CellRenderer implements ListCellRenderer<JCheckBox> {
         public Component getListCellRendererComponent(
-                JList<? extends JCheckBox> list, JCheckBox value, int index,
+                JList<? extends JCheckBox> list, JCheckBox checkbox, int index,
                 boolean isSelected, boolean cellHasFocus) {
-            JCheckBox checkbox = value;
 
             //Drawing checkbox, change the appearance here
             checkbox.setBackground(isSelected ? getSelectionBackground()

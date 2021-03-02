@@ -1,55 +1,21 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package fileexplorer;
 
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.*;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTree;
-import javax.swing.ListSelectionModel;
-import javax.swing.border.EmptyBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
-
+import java.util.stream.IntStream;
 
 public class FileExplorer {
-
 
     public static void main(String[] args) {
         // TODO code application logic here
@@ -59,12 +25,30 @@ public class FileExplorer {
 
         Map<String, List<Color>> colorStorage = ReadStorage();
         FileModel model = new FileModel(root[0].getPath(), colorStorage);
-        DefaultListModel<JCheckBox> checkBoxes = new DefaultListModel<JCheckBox>();
+        DefaultListModel<JCheckBox> checkBoxes = new DefaultListModel<>();
         JScrollPane fileView = new JScrollPane();
 
         JPanel fileOpened = new JPanel();
-        JList list = new JList(model);
+        JList<File> list = new JList<>(model);
         list.addListSelectionListener(new ListListener(colorStorage, fileOpened));
+        list.addMouseListener(new MouseInputAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    JPopupMenu menu = new JPopupMenu();
+                    JMenuItem item = new JMenuItem("Open in Explorer");
+                    item.addActionListener(e1 -> {
+                        File file = new File(list.getSelectedValue().toString());
+                        openInExplorer(file);
+                    });
+                    menu.add(item);
+                    list.setSelectedIndex(list.locationToIndex(e.getPoint()));
+                    menu.show(list, 15, list.getCellBounds(
+                            list.getSelectedIndex(),
+                            list.getSelectedIndex()).y + 15);
+                }
+            }
+        });
         fileView.setViewportView(fileOpened);
 
         JSplitPane fileSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -72,16 +56,15 @@ public class FileExplorer {
         JPanel treePanel = new JPanel();
 
 
-        // RadioButtons radios = new RadioButtons(root[0].listFiles(),folderModel,tree);
-        JComboBox cb = new JComboBox(root);
+        JComboBox<File> cb = new JComboBox<>(root);
         JPanel cards = new JPanel(new CardLayout());
-        for (int i = 0; i < root.length; i++) {
+        IntStream.range(0, root.length).forEach(i -> {
             FolderModel folderModel = new FolderModel(root[i].getPath());
             JTree tree = new JTree(folderModel);
             tree.addTreeSelectionListener(new TreeListener(model));
-            JScrollPane treepane = new JScrollPane(tree);
-            cards.add(treepane, root[i].getPath());
-        }
+            JScrollPane treePane = new JScrollPane(tree);
+            cards.add(treePane, root[i].getPath());
+        });
 
 
         cb.addItemListener(new ComboBoxListener(cards));
@@ -93,23 +76,17 @@ public class FileExplorer {
         treePanel.setLayout(new BoxLayout(treePanel, BoxLayout.PAGE_AXIS));
         treePanel.setPreferredSize(treePanel.getPreferredSize());
         treePanel.setBackground(Color.WHITE);
-        // treeScroller.setMinimumSize( new Dimension( 0, 0 ) );
-        //fileView.add(displayFile);        
-
-        //tree.setAlignmentX(Component.LEFT_ALIGNMENT);        
 
         JPanel filePanel = new JPanel();
         filePanel.setLayout(new BoxLayout(filePanel, BoxLayout.X_AXIS));
         filePanel.add(listScroller);
         filePanel.setBackground(Color.white);
 
-        JCheckBox redFilter = new JCheckBox("Red");
-        JCheckBox blueFilter = new JCheckBox("Blue");
-        JCheckBox greenFilter = new JCheckBox("Green");
-
-        checkBoxes.addElement(redFilter);
-        checkBoxes.addElement(blueFilter);
-        checkBoxes.addElement(greenFilter);
+        for (Map.Entry<String, Color> entry : Colors.colors.entrySet()) {
+            String keyColor = entry.getKey();
+            JCheckBox filter = new JCheckBox(keyColor);
+            checkBoxes.addElement(filter);
+        }
 
         CheckboxListRenderer filterFile = new CheckboxListRenderer(checkBoxes);
         JPanel filterPanel = new JPanel();
@@ -123,24 +100,22 @@ public class FileExplorer {
         filterPanel.add(filterFile);
         filterPanel.add(Box.createVerticalStrut(5));
         JButton button = new JButton("Filter");
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                List<Color> color = new ArrayList<Color>();
-                for (int i = 0; i < checkBoxes.size(); i++) {
-                    JCheckBox temp = checkBoxes.get(i);
-                    if (temp.isSelected()) {
-                        if (temp.getText() == "Red") {
-                            color.add(Color.red);
-                        } else if (temp.getText() == "Blue") {
-                            color.add(Color.BLUE);
-                        } else if (temp.getText() == "Green") {
-                            color.add(Color.GREEN);
+        button.addActionListener(e -> {
+            List<Color> color = new ArrayList<>();
+            for (int i = 0; i < checkBoxes.size(); i++) {
+                JCheckBox temp = checkBoxes.get(i);
+                if (temp.isSelected()) {
+                    for (Map.Entry<String, Color> entry : Colors.colors.entrySet()) {
+                        String keyColor = entry.getKey();
+                        Color valueColor = entry.getValue();
+                        if (temp.getText().equals(keyColor)) {
+                            color.add(valueColor);
+                            break;
                         }
                     }
                 }
-                model.SetFilter(color);
             }
+            model.SetFilter(color);
         });
         filterPanel.setBorder(new EmptyBorder(0, 5, 0, 5));
         filterPanel.add(button);
@@ -166,21 +141,30 @@ public class FileExplorer {
     }
 
 
+    private static void openInExplorer(File file) {
+        Desktop desktop = Desktop.getDesktop();
+        try {
+            desktop.open(file.getParentFile());
+        } catch (IOException ex) {
+            Logger.getLogger(FileExplorer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     private static Map<String, List<Color>> ReadStorage() {
         //Reads the storage file and converts it to a hashmap, in case of errors returns empty hashmaps
         HashMap<String, List<Color>> map;
         try {
             FileInputStream fileIn = new FileInputStream(new File("Store.ser").getCanonicalFile());
             ObjectInputStream in = new ObjectInputStream(fileIn);
+
+            //The unchecked cast error is due to the fact that the compiler has no way of pre-knowing
+            //which object is contained in the file.
             map = (HashMap<String, List<Color>>) in.readObject();
             in.close();
             fileIn.close();
-        } catch (IOException i) {
+        } catch (IOException | ClassNotFoundException i) {
             i.printStackTrace();
-            return new HashMap<String, List<Color>>();
-        } catch (ClassNotFoundException c) {
-            c.printStackTrace();
-            return new HashMap<String, List<Color>>();
+            return new HashMap<>();
         }
         return map;
     }
@@ -196,8 +180,7 @@ public class FileExplorer {
             File fileSysEntity = (File) e.getPath().getLastPathComponent();
             if (fileSysEntity == null) {
                 System.out.println("Can't be opened");
-            }
-            if (fileSysEntity.isDirectory()) {
+            } else if (fileSysEntity.isDirectory()) {
                 model.setDirectory(fileSysEntity);
             } else {
                 model.setDirectory(null);
@@ -231,43 +214,36 @@ public class FileExplorer {
         public ListListener(Map<String, List<Color>> colorStorage, JPanel fileOpened) {
             this.colorStorage = colorStorage;
             this.fileOpened = fileOpened;
-            checkBoxes = new DefaultListModel<JCheckBox>();
+            checkBoxes = new DefaultListModel<>();
             displayFile = new CheckboxListRenderer(checkBoxes);
             //Box Layout is used to set the layout of the panel, stacking the next item on top of the previous item
-            this.fileOpened.setLayout(new BoxLayout(fileOpened, BoxLayout.PAGE_AXIS));
-            this.fileOpened.setBackground(Color.WHITE);
+            fileOpened.setLayout(new BoxLayout(fileOpened, BoxLayout.PAGE_AXIS));
+            fileOpened.setBackground(Color.WHITE);
         }
 
         //Function  triggered whenever a new item in the list is selected
         @Override
         public void valueChanged(ListSelectionEvent e) {
-            JList list = (JList) e.getSource();
+            //The unchecked cast error is due to the fact that the compiler has no way of pre-knowing
+            //which object is contained in the list
+            JList<File> list = (JList<File>) e.getSource();
             int firstIndex = list.getSelectedIndex();
             FileModel model = (FileModel) list.getModel();
-            File file = (File) model.getElementAt(firstIndex);
+            File file = model.getElementAt(firstIndex);
             checkBoxes.clear();
-            List<Color> colors = new ArrayList<Color>();
+            List<Color> colors = new ArrayList<>();
 
             if (colorStorage.containsKey(file.getPath())) {
                 colors = colorStorage.get(file.getPath());
             }
-
-            if (colors.contains(Color.RED)) {
-                checkBoxes.addElement(new JCheckBox("Red", true));
-            } else {
-                checkBoxes.addElement(new JCheckBox("Red"));
-            }
-
-            if (colors.contains(Color.blue)) {
-                checkBoxes.addElement(new JCheckBox("Blue", true));
-            } else {
-                checkBoxes.addElement(new JCheckBox("Blue"));
-            }
-
-            if (colors.contains(Color.GREEN)) {
-                checkBoxes.addElement(new JCheckBox("Green", true));
-            } else {
-                checkBoxes.addElement(new JCheckBox("Green"));
+            for (Map.Entry<String, Color> entry : Colors.colors.entrySet()) {
+                String keyColor = entry.getKey();
+                Color valueColor = entry.getValue();
+                if (colors.contains(valueColor)) {
+                    checkBoxes.addElement(new JCheckBox(keyColor, true));
+                } else {
+                    checkBoxes.addElement(new JCheckBox(keyColor));
+                }
             }
             //The fileOpened JPanel isn't associated with any model that can trigger a redraw
             // so We need to remove everything added before adding new items
@@ -281,16 +257,17 @@ public class FileExplorer {
             saveMarkers.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    List<Color> color = new ArrayList<Color>();
+                    List<Color> color = new ArrayList<>();
                     for (int i = 0; i < checkBoxes.size(); i++) {
                         JCheckBox temp = checkBoxes.get(i);
                         if (temp.isSelected()) {
-                            if (temp.getText() == "Red") {
-                                color.add(Color.red);
-                            } else if (temp.getText() == "Blue") {
-                                color.add(Color.BLUE);
-                            } else if (temp.getText() == "Green") {
-                                color.add(Color.GREEN);
+                            for (Map.Entry<String, Color> entry : Colors.colors.entrySet()) {
+                                String keyColor = entry.getKey();
+                                Color valueColor = entry.getValue();
+                                if (temp.getText().equals(keyColor)) {
+                                    color.add(valueColor);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -311,17 +288,7 @@ public class FileExplorer {
                     }
                 }
             });
-            explorer.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    Desktop desktop = Desktop.getDesktop();
-                    try {
-                        desktop.open(file.getParentFile());
-                    } catch (IOException ex) {
-                        Logger.getLogger(FileExplorer.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
+            explorer.addActionListener(e1 -> openInExplorer(file));
 
             fileName.setAlignmentX(Component.LEFT_ALIGNMENT);
             filePath.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -340,8 +307,7 @@ public class FileExplorer {
             fileName.setBorder(new EmptyBorder(0, 0, 2, 0));
             filePath.setBorder(new EmptyBorder(0, 0, 2, 0));
             displayFile.setBorder(new EmptyBorder(0, 0, 2, 0));
-            //explorer.setMargin(new Insets(0,0,5,0));            
-            //saveMarkers.setMargin(new Insets(0,0,5,0));            
+
         }
     }
 }
